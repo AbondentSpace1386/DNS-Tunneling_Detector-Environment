@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from model import Action, ResetRequest, ResetResponse, StepResponse, State
 from env import DNSenv, easy_data, medium_data, hard_data
-
+from typing import Optional
 app = FastAPI()
 
 
@@ -10,17 +10,21 @@ env = None
 @app.get("/")
 def home():
     return {"message": "DNS Tunneling OpenEnv API is running"}
-
 @app.post("/reset", response_model=ResetResponse)
-def reset(req: ResetRequest):
+def reset(req: Optional[ResetRequest] = None):
 
     global env
 
-    if req.task == "easy_detection":
+    task = "easy_detection"
+
+    if req is not None and req.task is not None:
+        task = req.task
+
+    if task == "easy_detection":
         env = DNSenv(easy_data)
-    elif req.task == "mixed_traffic":
+    elif task == "mixed_traffic":
         env = DNSenv(medium_data)
-    elif req.task == "obfuscated_tunnel":
+    elif task == "obfuscated_tunnel":
         env = DNSenv(hard_data)
     else:
         env = DNSenv(easy_data)
@@ -28,8 +32,6 @@ def reset(req: ResetRequest):
     state = env.reset()
 
     return ResetResponse(state=state)
-
-
 @app.post("/step", response_model=StepResponse)
 def step(action: Action):
 
