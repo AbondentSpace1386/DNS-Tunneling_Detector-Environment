@@ -1,0 +1,18 @@
+[project]
+name = "dns-tunneling-openenv"
+version = "0.1.0"
+description = "OpenEnv RL environment for DNS tunneling detection"
+authors = [
+  { name = "Shrikant Bandawala" }
+]
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic",
+  "pandas",
+  "requests"
+]
+
+[tool.uvicorn]
+host = "0.0.0.0"
+port = 8000
