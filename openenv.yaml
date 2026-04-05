@@ -1,27 +1,23 @@
 name: dns-tunneling-env
 version: 1.0
 
-description: >
-  Reinforcement Learning environment for detecting DNS tunneling attacks.
-  The agent must decide whether to allow, investigate, or block DNS queries.
+description: DNS tunneling detection RL environment using OpenEnv.
 
 actions:
   type: discrete
   values: [0, 1, 2]
 
 observations:
-  type: vector
+  type: float_array
   size: 4
-  description: >
-    [domain_length, request_frequency, entropy, query_type_encoded]
 
 tasks:
   - id: easy_detection
-    description: Easy dataset with clear patterns
+    description: Easy dataset
   - id: mixed_traffic
-    description: Mixed normal and suspicious traffic
+    description: Medium dataset
   - id: obfuscated_tunnel
-    description: Hard dataset with stealth tunneling
+    description: Hard dataset
 
 reward_range: [0.0, 1.0]
 
