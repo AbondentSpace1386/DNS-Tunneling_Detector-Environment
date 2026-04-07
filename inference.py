@@ -10,65 +10,88 @@ TASKS = [
 ]
 
 
-
+# -------------------------------
+# Simple safe agent
+# -------------------------------
 def decide_action(features):
     domain_length, request_freq, entropy, query_type = features
 
-    # strong indicators
-    if entropy > 0.6 and request_freq > 0.5:
-        return 2  # block
-
-    # suspicious patterns
-    if entropy > 0.45:
-        if request_freq > 0.3 or domain_length > 0.5:
-            return 1  # investigate
-
-    # stealth tunneling detection
-    if request_freq > 0.6:
-        return 1  # investigate
-
-    # avoid false positives
-    if entropy < 0.2 and request_freq < 0.2:
-        return 0  # allow
-
-    # fallback
-    if entropy > 0.3:
+    if entropy > 0.5:
+        return 2
+    elif entropy > 0.3 or request_freq > 0.5:
         return 1
     else:
         return 0
 
 
+# -------------------------------
+# Run one task safely
+# -------------------------------
 def run_task(task_name):
     print(f"\nRunning task: {task_name}")
 
-    res = requests.post(f"{BASE_URL}/reset", json={"task": task_name})
-    state = res.json()["state"]
+    try:
+        res = requests.post(f"{BASE_URL}/reset", json={"task": task_name}, timeout=10)
+        data = res.json()
+    except Exception as e:
+        print("Reset request failed:", e)
+        return
+
+    if "state" not in data:
+        print("Reset failed:", data)
+        return
+
+    state = data["state"]
 
     total_reward = 0
     steps = 0
 
     while True:
-        features = state["features"]
+        try:
+            features = state.get("features", [])
+            if not features:
+                print("Invalid state:", state)
+                break
 
-        action = decide_action(features)
+            action = decide_action(features)
 
-        step_res = requests.post(
-            f"{BASE_URL}/step",
-            json={"action": action}
-        ).json()
+            step_res = requests.post(
+                f"{BASE_URL}/step",
+                json={"action": action},
+                timeout=10
+            )
 
-        total_reward += step_res["reward"]
-        steps += 1
+            data = step_res.json()
 
-        if step_res["done"]:
+        except Exception as e:
+            print("Step request failed:", e)
             break
 
-        state = step_res["state"]
+        reward = data.get("reward", 0)
+        done = data.get("done", True)
 
-    score = total_reward / max(1, steps)
-    print(f"Score: {score:.4f}")
+        total_reward += reward
+        steps += 1
+
+        if done:
+            break
+
+        if "state" not in data:
+            print("Missing state in response:", data)
+            break
+
+        state = data["state"]
+
+    if steps > 0:
+        score = total_reward / steps
+        print(f"Score: {score:.4f}")
+    else:
+        print("No steps executed")
 
 
+# -------------------------------
+# MAIN
+# -------------------------------
 def main():
     for task in TASKS:
         run_task(task)
