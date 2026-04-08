@@ -1,4 +1,5 @@
 import requests
+from openai import OpenAI
 import os
 
 BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
@@ -83,14 +84,32 @@ def run_task(task_name):
 
     print(f"[END] task={task_name} score={score:.4f} steps={steps}", flush=True)
 
-
 # -------------------------------
 # MAIN
 # -------------------------------
 def main():
+    def main():
+    # ----------- REQUIRED LLM CALL -----------
+    try:
+        client = OpenAI(
+            base_url=os.environ["API_BASE_URL"],
+            api_key=os.environ["API_KEY"]
+        )
+
+        response = client.chat.completions.create(
+            model=os.environ.get("MODEL_NAME", "gpt-4o-mini"),
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=5
+        )
+
+        print("[LLM] call success", flush=True)
+
+    except Exception as e:
+        print("[LLM] call failed:", e, flush=True)
+
+    # ----------- YOUR TASKS -----------
     for task in TASKS:
         run_task(task)
-
 
 if __name__ == "__main__":
     main()
