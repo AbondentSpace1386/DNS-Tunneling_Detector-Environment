@@ -28,17 +28,17 @@ def decide_action(features):
 # Run one task safely
 # -------------------------------
 def run_task(task_name):
-    print(f"\nRunning task: {task_name}")
+    print(f"[START] task={task_name}", flush=True)
 
     try:
         res = requests.post(f"{BASE_URL}/reset", json={"task": task_name}, timeout=10)
         data = res.json()
     except Exception as e:
-        print("Reset request failed:", e)
+        print(f"[END] task={task_name} error={e}", flush=True)
         return
 
     if "state" not in data:
-        print("Reset failed:", data)
+        print(f"[END] task={task_name} error=reset_failed", flush=True)
         return
 
     state = data["state"]
@@ -47,24 +47,20 @@ def run_task(task_name):
     steps = 0
 
     while True:
+        features = state.get("features", [])
+        if not features:
+            break
+
+        action = decide_action(features)
+
         try:
-            features = state.get("features", [])
-            if not features:
-                print("Invalid state:", state)
-                break
-
-            action = decide_action(features)
-
             step_res = requests.post(
                 f"{BASE_URL}/step",
                 json={"action": action},
                 timeout=10
             )
-
             data = step_res.json()
-
-        except Exception as e:
-            print("Step request failed:", e)
+        except Exception:
             break
 
         reward = data.get("reward", 0)
@@ -73,20 +69,19 @@ def run_task(task_name):
         total_reward += reward
         steps += 1
 
+        print(f"[STEP] step={steps} reward={reward}", flush=True)
+
         if done:
             break
 
         if "state" not in data:
-            print("Missing state in response:", data)
             break
 
         state = data["state"]
 
-    if steps > 0:
-        score = total_reward / steps
-        print(f"Score: {score:.4f}")
-    else:
-        print("No steps executed")
+    score = total_reward / steps if steps > 0 else 0
+
+    print(f"[END] task={task_name} score={score:.4f} steps={steps}", flush=True)
 
 
 # -------------------------------
