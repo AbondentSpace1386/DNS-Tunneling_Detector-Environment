@@ -78,12 +78,22 @@ def run_task(task_name):
             break
 
         state = data["state"]
+        score = total_reward / max(1, steps)
 
-    score = total_reward / steps if steps > 0 else 0.5
-    if score <= 0:
-        score = 0.0001
-    elif score >= 1:
-        score = 0.9999
+# strict bounds
+        score = max(0.0001, min(0.9999, score))
+
+# prevent rounding issues
+        if score < 0.001:
+            score = 0.001
+        elif score > 0.999:
+            score = 0.999
+
+# edge case
+        if steps == 0:
+            score = 0.5
+
+print(f"[END] task={task_name} score={score} steps={steps}", flush=True)
 
     print(f"[END] task={task_name} score={score:.4f} steps={steps}", flush=True)
 
