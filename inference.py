@@ -29,30 +29,30 @@ def ping_llm():
     except Exception:
         return None
 def decide_action(features):
-    # safe unpack
+
     if not isinstance(features, (list, tuple)) or len(features) != 4:
         return 0
 
     domain_length, request_freq, entropy, query_type = features
 
-    # strong indicators
+
     if entropy > 0.6 and request_freq > 0.5:
         return 2  # block
 
-    # suspicious patterns
+
     if entropy > 0.45:
         if request_freq > 0.3 or domain_length > 0.5:
             return 1  # investigate
 
-    # stealth tunneling detection
+ 
     if request_freq > 0.6:
         return 1  # investigate
 
-    # avoid false positives
+
     if entropy < 0.2 and request_freq < 0.2:
         return 0  # allow
 
-    # fallback
+
     if entropy > 0.3:
         return 1
     else:
@@ -60,7 +60,7 @@ def decide_action(features):
 
 
 def run_task(task_name):
-    # ✅ START block
+
     ping_llm()
     print(f"[START] task={task_name}", flush=True)
 
@@ -73,7 +73,7 @@ def run_task(task_name):
         data = res.json()
         state = data.get("state", {})
     except:
-        # fallback if API fails
+
         print(f"[END] task={task_name} score=0.5 steps=1", flush=True)
         return
 
@@ -97,14 +97,14 @@ def run_task(task_name):
 
         reward = step_res.get("reward", 0)
 
-        # ensure numeric reward
+
         if not isinstance(reward, (int, float)):
             reward = 0
 
         total_reward += reward
         steps += 1
 
-        # ✅ STEP block
+  
         print(f"[STEP] step={steps} reward={reward}", flush=True)
 
         if step_res.get("done", False):
@@ -112,26 +112,26 @@ def run_task(task_name):
 
         state = step_res.get("state", {})
 
-    # ✅ SAFE SCORE CALCULATION
+
     if steps == 0:
         score = 0.5
         steps = 1
     else:
         score = total_reward / steps
 
-    # 🔥 HARD GUARANTEE (NO ROUNDING ISSUES)
+
     if score <= 0:
         score = 0.123456
     elif score >= 1:
         score = 0.987654
 
-    # extra safety against float formatting issues
+
     if score < 0.001:
         score = 0.001234
     elif score > 0.999:
         score = 0.998765
 
-    # ✅ END block (NO formatting like .4f)
+
     print(f"[END] task={task_name} score={score} steps={steps}", flush=True)
 
 
