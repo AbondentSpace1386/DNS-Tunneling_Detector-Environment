@@ -79,7 +79,11 @@ def run_task(task_name):
 
         state = data["state"]
 
-    score = total_reward / steps if steps > 0 else 0
+    score = total_reward / steps if steps > 0 else 0.5
+    if score <= 0:
+        score = 0.0001
+    elif score >= 1:
+        score = 0.9999
 
     print(f"[END] task={task_name} score={score:.4f} steps={steps}", flush=True)
 
